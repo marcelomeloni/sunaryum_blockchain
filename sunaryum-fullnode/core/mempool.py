@@ -17,7 +17,13 @@ class Mempool:
         self.transactions = []
         
         self.load()
-
+    def clear_energy_data(self):
+        """Limpa todos os dados de energia"""
+        removed_count = len(self.energy_data)
+        self.energy_data = {}
+        self.save()
+        logger.info(f"Limpos {removed_count} registros de energia")
+        return True
     def load(self):
         try:
             if not os.path.exists(self.file_path):
@@ -80,15 +86,37 @@ class Mempool:
         except Exception as e:
             logger.error(f"Erro ao limpar mempool: {str(e)}")
             return False
+    def energy_data_exists(self, record_id):
+        """Verifica se um registro de energia existe pelo ID"""
+        return record_id in self.energy_data
+    def transaction_exists(self, tx_id):
+        """Verifica se uma transação existe pelo ID"""
+        return any(tx['id'] == tx_id for tx in self.transactions)
+    
+    def lock(self):
+        """Bloqueia o mempool para novas adições"""
+        self.locked = True
+
+    def unlock(self):
+        """Desbloqueia o mempool"""
+        self.locked = False
+    
 
     def add_transaction(self, transaction):
-        """Adiciona uma transação ao mempool"""
+        if hasattr(self, 'locked') and self.locked:
+            logger.warning("Mempool bloqueado. Ignorando adição de transação.")
+            return False
+            
+        if 'id' not in transaction:
+            logger.error("Transação sem ID, ignorando")
+            return False
+            
         # Verifique se já existe
-        if any(tx['id'] == transaction['id'] for tx in self.transactions):
-            return
-
-        self.transactions.append(transaction)
-        self.save()
+        if not any(tx['id'] == transaction['id'] for tx in self.transactions):
+            self.transactions.append(transaction)
+            self.save()
+            return True
+        return False
     def save(self):
         try:
             with open(self.file_path, 'w') as f:
@@ -100,15 +128,25 @@ class Mempool:
             logger.error(f"Erro ao salvar mempool: {str(e)}")
 
     def add_energy_data(self, record):
+        if hasattr(self, 'locked') and self.locked:
+            logger.warning("Mempool bloqueado. Ignorando adição de registro.")
+            return False
+            
         # Gerar ID único baseado no conteúdo
-        record_id = hashlib.sha256(
-            f"{record['producer']}{record['timestamp']}{record['total_kwh']}".encode()
-        ).hexdigest()
+        if 'id' not in record:
+            record_id = hashlib.sha256(
+                f"{record['producer']}{record['timestamp']}{record['total_kwh']}".encode()
+            ).hexdigest()
+            record['id'] = record_id
+        else:
+            record_id = record['id']
         
-        record['id'] = record_id
-        self.energy_data[record_id] = record
-        self.save()  # Salvar após adicionar
-        logger.debug(f"Registro de energia adicionado: {record_id}")
+        if record_id not in self.energy_data:
+            self.energy_data[record_id] = record
+            self.save()
+            logger.debug(f"Registro de energia adicionado: {record_id}")
+            return True
+        return False
 
     def get_records_since(self, timestamp):
         """Retorna todos os registros de energia desde o timestamp especificado."""

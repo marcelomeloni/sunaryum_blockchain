@@ -111,8 +111,7 @@ class Blockchain:
             "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
             "proposer": "genesis",
           
-            "transactions": [],
-            "nonce": 0
+            "transactions": []
         }
         genesis["hash"] = self.calculate_block_hash(genesis)
         self.save_block(genesis)
@@ -247,8 +246,7 @@ class Blockchain:
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "previous_hash": last_block['hash'],  # Use o hash real
             "proposer": proposer,
-            "transactions": transactions,
-            "nonce": 0
+            "transactions": transactions
         }
 
         block["hash"] = self.calculate_block_hash(block)

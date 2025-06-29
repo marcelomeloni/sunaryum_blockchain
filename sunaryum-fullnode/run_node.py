@@ -7,7 +7,8 @@ from core.gossip import GossipManager
 from core.peer_discovery import PeerDiscovery
 from core.wallet import Wallet
 import threading
-from datetime import datetime, timezone  # Importe timezone
+from core.vrf import VRFNode
+from datetime import datetime, timezone
 from collections import defaultdict
 
 # Configurar logging
@@ -60,55 +61,71 @@ def main():
         # Descoberta de peers
         discovery = PeerDiscovery(config={'Network': network_config})
         logger.info(f"Peers configurados: {len(discovery.peers)}")
-        
+        vrf_secret = get_config_value(config, 'VRF', 'vrf_secret', private_key)
+        vrf_node = VRFNode(vrf_secret)
         gossip = GossipManager(
             config=config,
             blockchain=blockchain,
             mempool=mempool,
             discovery=discovery,
-            wallet=wallet
+            wallet=wallet,
+            vrf=vrf_node 
         )
         
         # Iniciar servidor P2P
         gossip.start_server()
         
-        # Iniciar processo de eleição imediatamente
-        threading.Thread(target=gossip._election_worker, daemon=True).start()
-        
-        logger.info(f"Full Node iniciado na porta {listen_port}. Aguardando dados...")
+        # Dar tempo para o servidor iniciar
+        time.sleep(2)
         
         # Sincronizar blockchain inicialmente
         discovery.sync_blockchain(blockchain)
         
+        # Variável para controlar tempo da última eleição forçada
+        last_forced_election = 0
+        election_cooldown = 300  # 5 minutos entre eleições forçadas
+        
+        logger.info(f"Full Node iniciado na porta {listen_port}. Aguardando dados...")
+        
         # Loop principal simplificado
+        last_forced_check = 0
         while True:
             try:
-                # Verificar se estamos isolados e precisa iniciar eleição
+                # Obter peers ativos EXTERNOS
                 active_peers = discovery.get_active_peers()
-                if len(active_peers) <= 1:  # Somente nós mesmos
-                    # Verificar se já passou tempo suficiente desde o último bloco
-                    last_block = blockchain.get_last_block()
-                    if last_block:
-                        # Usar timezone UTC
-                        last_block_time = datetime.fromisoformat(
-                            last_block['timestamp'].replace('Z', '+00:00')
-                        ).replace(tzinfo=timezone.utc)
-                        
-                        # Usar datetime com timezone UTC
-                        elapsed = (datetime.now(timezone.utc) - last_block_time).total_seconds()
-                        
-                        if elapsed > gossip.block_interval * 1.5:
-                            logger.info("Nó isolado e sem novos blocos, forçando eleição")
-                            gossip._run_election()
                 
-                # Sincronizar periodicamente
+                # Log de diagnóstico
+                logger.info(f"Peers ativos detectados: {len(active_peers)}")
+                
+                # Verificar isolamento apenas se não houver peers externos
+                if len(active_peers) == 0:
+                    current_time = time.time()
+                    # Verificar a cada 5 minutos
+                    if current_time - last_forced_check > 300:
+                        last_forced_check = current_time
+                        last_block = blockchain.get_last_block()
+                        if last_block:
+                            # Converter para UTC
+                            last_block_time = datetime.fromisoformat(
+                                last_block['timestamp'].replace('Z', '+00:00')
+                            ).replace(tzinfo=timezone.utc)
+                            
+                            elapsed = (datetime.now(timezone.utc) - last_block_time).total_seconds()
+                            logger.info(f"Tempo desde último bloco: {elapsed:.1f}s")
+                            
+                            # Verificar se passou mais de 1.5x o intervalo de bloco
+                            if elapsed > gossip.block_interval * 1.5:
+                                logger.info("Nó isolado e sem novos blocos. Aguardando ciclo de eleição.")
+                
+                # Sincronizar blockchain periodicamente
                 time.sleep(30)
                 discovery.sync_blockchain(blockchain)
-                discovery.sync_mempool(mempool)
                 
             except Exception as e:
                 logger.error(f"Erro no loop principal: {str(e)}", exc_info=True)
                 time.sleep(30)
+                
+    
                 
     except Exception as e:
         logger.error(f"Erro fatal: {str(e)}", exc_info=True)

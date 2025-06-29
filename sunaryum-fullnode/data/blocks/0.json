@@ -1,0 +1,8 @@
+{
+  "index": 0,
+  "timestamp": "2025-01-01T00:00:00Z",
+  "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "proposer": "genesis",
+  "transactions": [],
+  "hash": "e09c7961e87761e3fc1c490900bfc8f26f73cd47c160ffb6fa7db25432e90e2d"
+}
