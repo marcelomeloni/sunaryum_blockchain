@@ -1,0 +1,31 @@
+{
+  "index": 1,
+  "timestamp": "2025-07-17T14:11:21.045676Z",
+  "previous_hash": "e09c7961e87761e3fc1c490900bfc8f26f73cd47c160ffb6fa7db25432e90e2d",
+  "proposer": "4ac56ffbda2569ae47c4e2d0a6251cd741ccc7586356801ed2f8dc058af66a905cca1060705993be0c33d2ad818dc1e365fa4fc4c7bdcc7d87aeb021de52005f",
+  "transactions": [
+    {
+      "id": "280d8e891f3e06180ead8ccbcaa635463b07aa32b7430b531f693018d2c6a59f",
+      "inputs": [],
+      "outputs": [
+        {
+          "address": "148f2612d595691b0b492e127df9fb07e27de72b",
+          "amount": 0.34276
+        },
+        {
+          "address": "4ac56ffbda2569ae47c4e2d0a6251cd741ccc7586356801ed2f8dc058af66a905cca1060705993be0c33d2ad818dc1e365fa4fc4c7bdcc7d87aeb021de52005f",
+          "amount": 0.01353
+        },
+        {
+          "address": "ef071ebb4fdd09d5940732146b599efee752040b847c205b235ef6cd14dff21c17e4a815181633114ec4902ea655f9a49c50c7dad5d4023cb1ae2183cdd06cd6",
+          "amount": 0.00451
+        }
+      ],
+      "timestamp": "2025-07-17T14:11:21.044587Z",
+      "signature": "3046022100cb04f7d956d39268782dccd1471645e599096a5006818fef53dfdd96d660a5d20221009c2292f7529b18c70f77190af33cb6eadaf24ab1e882c743ce44302285f6f410",
+      "proposer": "4ac56ffbda2569ae47c4e2d0a6251cd741ccc7586356801ed2f8dc058af66a905cca1060705993be0c33d2ad818dc1e365fa4fc4c7bdcc7d87aeb021de52005f"
+    }
+  ],
+  "hash": "3064220577a13adaa0dc15720c546d6c4516268ef84aa2e5141daf330ff5ec06",
+  "signature": "3044022039ac1a74726ad4703315a9c6c708a755edebf39f99094e5d29d35986118dcbb702204ed8d260303e54abbef7867a0cd9196fca177eb5cb75853abd067cca63390b57"
+}
